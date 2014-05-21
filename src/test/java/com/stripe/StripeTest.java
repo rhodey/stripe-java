@@ -1373,22 +1373,50 @@ public class StripeTest {
 
   @Test
   public void testCreateAndGetReceiver() throws StripeException {
-    final String  CURRENCY = "usd";
-    final Integer AMOUNT   = 1337;
+    final String  CURRENCY    = "usd";
+    final Integer AMOUNT      = 1337;
+    final String  DESCRIPTION = "test receiver";
+    final String  EMAIL       = "sorry@for.wasting.receivers";
 
-    Map<String, Object> params = new HashMap<String, Object>();
+    final String KEY_METADATA_SECRET_WORD   = "secret_word";
+    final String VALUE_METADATA_SECRET_WORD = "duck";
 
-    params.put("currency", CURRENCY);
-    params.put("amount",   AMOUNT);
+    Map<String, Object> receiverParams = new HashMap<String, Object>();
+    Map<String, String> metadataParams = new HashMap<String, String>();
 
-    Receiver createReceiver   = Receiver.create(params,                   stripeConfig.getApiKeyPublishable());
+    receiverParams.put("currency",    CURRENCY);
+    receiverParams.put("amount",      AMOUNT);
+    receiverParams.put("description", DESCRIPTION);
+    receiverParams.put("email",       EMAIL);
+
+    metadataParams.put(KEY_METADATA_SECRET_WORD, VALUE_METADATA_SECRET_WORD);
+    receiverParams.put("metadata", metadataParams);
+
+    Receiver createReceiver   = Receiver.create(receiverParams,           stripeConfig.getApiKeyPublishable());
     Receiver retrieveReceiver = Receiver.retrieve(createReceiver.getId(), stripeConfig.getApiKeyPublishable());
+
+    assertNotNull(createReceiver.getCreated());
+    assertNotNull(createReceiver.getInboundAddress());
+    assertNotNull(createReceiver.getBitcoinUri());
+    assertNotNull(createReceiver.getBitcoinAmount());
+    assertNotNull(createReceiver.getFilled());
 
     assertTrue(createReceiver.getCurrency().equals(CURRENCY));
     assertTrue(createReceiver.getAmount().equals(AMOUNT));
+    assertTrue(createReceiver.getDescription().equals(DESCRIPTION));
+    assertTrue(createReceiver.getEmail().equals(EMAIL));
+    assertTrue(createReceiver.getMetadata().get(KEY_METADATA_SECRET_WORD).equals(VALUE_METADATA_SECRET_WORD));
+
+    assertNotNull(retrieveReceiver.getInboundAddress());
+    assertNotNull(retrieveReceiver.getBitcoinUri());
+    assertNotNull(retrieveReceiver.getBitcoinAmount());
+    assertNotNull(retrieveReceiver.getFilled());
 
     assertTrue(retrieveReceiver.getCurrency().equals(CURRENCY));
     assertTrue(retrieveReceiver.getAmount().equals(AMOUNT));
+    assertTrue(retrieveReceiver.getDescription().equals(DESCRIPTION));
+    assertTrue(retrieveReceiver.getEmail().equals(EMAIL));
+    assertTrue(retrieveReceiver.getMetadata().get(KEY_METADATA_SECRET_WORD).equals(VALUE_METADATA_SECRET_WORD));
 
     assertTrue(createReceiver.getId().equals(retrieveReceiver.getId()));
   }
@@ -1398,8 +1426,12 @@ public class StripeTest {
     final String  CURRENCY = "usd";
     final Integer AMOUNT   = 1337;
 
+    final String  KEY_METADATA_SECRET_WORD   = "secret_word";
+    final String  VALUE_METADATA_SECRET_WORD = "duck";
+
     Map<String, Object> receiverParams = new HashMap<String, Object>();
     Map<String, Object> paymentParams  = new HashMap<String, Object>();
+    Map<String, String> metadataParams = new HashMap<String, String>();
 
     receiverParams.put("currency", CURRENCY);
     receiverParams.put("amount",   AMOUNT);
@@ -1411,16 +1443,22 @@ public class StripeTest {
     paymentParams.put("amount",   AMOUNT);
     paymentParams.put("receiver", receiver.getId());
 
+    metadataParams.put(KEY_METADATA_SECRET_WORD, VALUE_METADATA_SECRET_WORD);
+    paymentParams.put("metadata", metadataParams);
+
     Payment createPayment   = Payment.create(paymentParams,           stripeConfig.getApiKeySecret());
     Payment retrievePayment = Payment.retrieve(createPayment.getId(), stripeConfig.getApiKeySecret());
 
+    assertNotNull(createPayment.getCreated());
     assertTrue(createPayment.getCurrency().equals(CURRENCY));
     assertTrue(createPayment.getAmount().equals(AMOUNT));
     assertTrue(createPayment.getReceiver().equals(receiver.getId()));
+    assertTrue(createPayment.getMetadata().get(KEY_METADATA_SECRET_WORD).equals(VALUE_METADATA_SECRET_WORD));
 
     assertTrue(retrievePayment.getCurrency().equals(CURRENCY));
     assertTrue(retrievePayment.getAmount().equals(AMOUNT));
     assertTrue(retrievePayment.getReceiver().equals(receiver.getId()));
+    assertTrue(retrievePayment.getMetadata().get(KEY_METADATA_SECRET_WORD).equals(VALUE_METADATA_SECRET_WORD));
 
     assertTrue(createPayment.getId().equals(retrievePayment.getId()));
   }

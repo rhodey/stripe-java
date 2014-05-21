@@ -13,13 +13,14 @@ import java.util.Map;
 /**
  * Programmer: rhodey
  */
-public class Payment extends BitcoinApiResource {
+public class Payment extends BitcoinApiResource implements MetadataStore<Payment> {
 
   protected String  id;
   protected Long    created;
   protected Integer amount;
   protected String  currency;
   protected String  receiver;
+  protected Map<String, String> metadata;
 
   public String getId() {
     return id;
@@ -41,6 +42,14 @@ public class Payment extends BitcoinApiResource {
     return receiver;
   }
 
+  public Map<String, String> getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(Map<String, String> metadata) {
+    this.metadata = metadata;
+  }
+
   public static Payment create(Map<String, Object> params)
       throws AuthenticationException, InvalidRequestException,
       APIConnectionException, CardException, APIException
@@ -57,16 +66,30 @@ public class Payment extends BitcoinApiResource {
 
   public static Payment create(Map<String, Object> params, String apiKey)
       throws AuthenticationException, InvalidRequestException,
-      APIConnectionException, CardException, APIException
+             APIConnectionException, CardException, APIException
   {
     return request(APIResource.RequestMethod.POST, classURL(Payment.class), params, Payment.class, apiKey);
   }
 
   public static Payment retrieve(String id, String apiKey)
       throws AuthenticationException, InvalidRequestException,
-      APIConnectionException, CardException, APIException
+             APIConnectionException, CardException, APIException
   {
     return request(APIResource.RequestMethod.GET, instanceURL(Payment.class, id), null, Payment.class, apiKey);
+  }
+
+  public Payment update(Map<String, Object> params)
+      throws AuthenticationException, InvalidRequestException,
+             APIConnectionException, CardException, APIException
+  {
+    return update(params, null);
+  }
+
+  public Payment update(Map<String, Object> params, String apiKey)
+      throws AuthenticationException, InvalidRequestException,
+             APIConnectionException, CardException, APIException
+  {
+    return request(RequestMethod.POST, instanceURL(Payment.class, id), params, Payment.class, apiKey);
   }
 
 }

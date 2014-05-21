@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Programmer: rhodey
  */
-public class Receiver extends BitcoinApiResource {
+public class Receiver extends BitcoinApiResource implements MetadataStore<Receiver> {
 
   protected String  id;
   protected Long    created;
@@ -25,6 +25,7 @@ public class Receiver extends BitcoinApiResource {
   protected Boolean filled;
   protected String  description;
   protected String  email;
+  protected Map<String, String> metadata;
 
   public String getId() {
     return id;
@@ -66,6 +67,14 @@ public class Receiver extends BitcoinApiResource {
     return email;
   }
 
+  public Map<String, String> getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(Map<String, String> metadata) {
+    this.metadata = metadata;
+  }
+
   public static Receiver create(Map<String, Object> params)
       throws AuthenticationException, InvalidRequestException,
       APIConnectionException, CardException, APIException
@@ -82,16 +91,30 @@ public class Receiver extends BitcoinApiResource {
 
   public static Receiver create(Map<String, Object> params, String apiKey)
       throws AuthenticationException, InvalidRequestException,
-      APIConnectionException, CardException, APIException
+             APIConnectionException, CardException, APIException
   {
     return request(APIResource.RequestMethod.POST, classURL(Receiver.class), params, Receiver.class, apiKey);
   }
 
   public static Receiver retrieve(String id, String apiKey)
       throws AuthenticationException, InvalidRequestException,
-      APIConnectionException, CardException, APIException
+             APIConnectionException, CardException, APIException
   {
     return request(APIResource.RequestMethod.GET, instanceURL(Receiver.class, id), null, Receiver.class, apiKey);
+  }
+
+  public Receiver update(Map<String, Object> params)
+      throws AuthenticationException, InvalidRequestException,
+             APIConnectionException, CardException, APIException
+  {
+    return update(params, null);
+  }
+
+  public Receiver update(Map<String, Object> params, String apiKey)
+      throws AuthenticationException, InvalidRequestException,
+             APIConnectionException, CardException, APIException
+  {
+    return request(RequestMethod.POST, instanceURL(Receiver.class, id), params, Receiver.class, apiKey);
   }
 
 }
