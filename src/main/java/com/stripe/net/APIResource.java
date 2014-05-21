@@ -1,5 +1,20 @@
 package com.stripe.net;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.stripe.Stripe;
+import com.stripe.exception.APIConnectionException;
+import com.stripe.exception.APIException;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.CardException;
+import com.stripe.exception.InvalidRequestException;
+import com.stripe.model.EventData;
+import com.stripe.model.EventDataDeserializer;
+import com.stripe.model.StripeObject;
+import com.stripe.model.StripeRawJsonObject;
+import com.stripe.model.StripeRawJsonObjectDeserializer;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,24 +32,9 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.List;
-
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.stripe.Stripe;
-import com.stripe.exception.APIConnectionException;
-import com.stripe.exception.APIException;
-import com.stripe.exception.AuthenticationException;
-import com.stripe.exception.CardException;
-import com.stripe.exception.InvalidRequestException;
-import com.stripe.model.EventData;
-import com.stripe.model.EventDataDeserializer;
-import com.stripe.model.StripeObject;
-import com.stripe.model.StripeRawJsonObject;
-import com.stripe.model.StripeRawJsonObjectDeserializer;
 
 public abstract class APIResource extends StripeObject {
 
@@ -44,7 +44,7 @@ public abstract class APIResource extends StripeObject {
 			.registerTypeAdapter(StripeRawJsonObject.class, new StripeRawJsonObjectDeserializer())
 			.create();
 
-	private static String className(Class<?> clazz) {
+	protected static String className(Class<?> clazz) {
     String className = clazz.getSimpleName().toLowerCase().replace("$", " ");
 
     // TODO: Delurk this, with invoiceitem being a valid url, we can't get too
@@ -90,7 +90,7 @@ public abstract class APIResource extends StripeObject {
 		GET, POST, DELETE
 	}
 
-	private static String urlEncode(String str) throws UnsupportedEncodingException {
+	protected static String urlEncode(String str) throws UnsupportedEncodingException {
 		// Preserve original behavior that passing null for an object id will lead
 		// to us actually making a request to /v1/foo/null
 		if (str == null) {

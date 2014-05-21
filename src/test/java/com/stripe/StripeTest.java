@@ -1,24 +1,13 @@
 package com.stripe;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.stripe.exception.CardException;
-import com.stripe.exception.StripeException;
 import com.stripe.exception.InvalidRequestException;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Account;
+import com.stripe.model.ApplicationFee;
 import com.stripe.model.Balance;
 import com.stripe.model.BalanceTransaction;
 import com.stripe.model.BalanceTransactionCollection;
@@ -34,22 +23,44 @@ import com.stripe.model.DeletedCoupon;
 import com.stripe.model.DeletedCustomer;
 import com.stripe.model.DeletedInvoiceItem;
 import com.stripe.model.DeletedPlan;
+import com.stripe.model.DeletedRecipient;
 import com.stripe.model.Event;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceItem;
 import com.stripe.model.InvoiceLineItemCollection;
 import com.stripe.model.MetadataStore;
+import com.stripe.model.Payment;
 import com.stripe.model.Plan;
+import com.stripe.model.Receiver;
+import com.stripe.model.Recipient;
+import com.stripe.model.Refund;
 import com.stripe.model.Subscription;
 import com.stripe.model.Token;
 import com.stripe.model.Transfer;
-import com.stripe.model.Recipient;
-import com.stripe.model.DeletedRecipient;
-import com.stripe.model.Refund;
-import com.stripe.model.ApplicationFee;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class StripeTest {
-	static Map<String, Object> defaultCardParams = new HashMap<String, Object>();
+
+  private static StripeConfig stripeConfig;
+
+  static Map<String, Object> defaultCardParams = new HashMap<String, Object>();
 	static Map<String, Object> defaultDebitCardParams = new HashMap<String, Object>();
 	static Map<String, Object> defaultChargeParams = new HashMap<String, Object>();
 	static Map<String, Object> defaultCustomerParams = new HashMap<String, Object>();
@@ -127,10 +138,19 @@ public class StripeTest {
 		return recipient;
 	}
 
+  private static StripeConfig handleLoadStripeConfig() throws IOException {
+    InputStream  configFileStream = new FileInputStream(new File("src/test/config.yml"));
+    ObjectMapper objectMapper     = new ObjectMapper(new YAMLFactory());
+
+    objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+    return objectMapper.readValue(configFileStream, StripeConfig.class);
+  }
+
 	@BeforeClass
-	public static void setUp() {
-		Stripe.apiKey = "tGN0bIwXnHdwOa85VABjPdSn8nWY7G7I"; // stripe public
-															// test key
+	public static void setUp() throws IOException {
+
+    stripeConfig  = handleLoadStripeConfig();
+    Stripe.apiKey = "tGN0bIwXnHdwOa85VABjPdSn8nWY7G7I"; // stripe public test key
 
 		defaultCardParams.put("number", "4242424242424242");
 		defaultCardParams.put("exp_month", 12);
@@ -1350,4 +1370,59 @@ public class StripeTest {
 	public void testInvoiceItemMetadata() throws StripeException {
 		testMetadata(InvoiceItem.create(getInvoiceItemParams()));
 	}
+
+  @Test
+  public void testCreateAndGetReceiver() throws StripeException {
+    final String  CURRENCY = "usd";
+    final Integer AMOUNT   = 1337;
+
+    Map<String, Object> params = new HashMap<String, Object>();
+
+    params.put("currency", CURRENCY);
+    params.put("amount",   AMOUNT);
+
+    Receiver createReceiver   = Receiver.create(params,                   stripeConfig.getApiKeyPublishable());
+    Receiver retrieveReceiver = Receiver.retrieve(createReceiver.getId(), stripeConfig.getApiKeyPublishable());
+
+    assertTrue(createReceiver.getCurrency().equals(CURRENCY));
+    assertTrue(createReceiver.getAmount().equals(AMOUNT));
+
+    assertTrue(retrieveReceiver.getCurrency().equals(CURRENCY));
+    assertTrue(retrieveReceiver.getAmount().equals(AMOUNT));
+
+    assertTrue(createReceiver.getId().equals(retrieveReceiver.getId()));
+  }
+
+  @Test
+  public void testCreateAndGetPayment() throws StripeException, InterruptedException {
+    final String  CURRENCY = "usd";
+    final Integer AMOUNT   = 1337;
+
+    Map<String, Object> receiverParams = new HashMap<String, Object>();
+    Map<String, Object> paymentParams  = new HashMap<String, Object>();
+
+    receiverParams.put("currency", CURRENCY);
+    receiverParams.put("amount",   AMOUNT);
+
+    Receiver receiver = Receiver.create(receiverParams, stripeConfig.getApiKeyPublishable());
+    Thread.sleep(6000); // wait for the receiver to be filled
+
+    paymentParams.put("currency", CURRENCY);
+    paymentParams.put("amount",   AMOUNT);
+    paymentParams.put("receiver", receiver.getId());
+
+    Payment createPayment   = Payment.create(paymentParams,           stripeConfig.getApiKeySecret());
+    Payment retrievePayment = Payment.retrieve(createPayment.getId(), stripeConfig.getApiKeySecret());
+
+    assertTrue(createPayment.getCurrency().equals(CURRENCY));
+    assertTrue(createPayment.getAmount().equals(AMOUNT));
+    assertTrue(createPayment.getReceiver().equals(receiver.getId()));
+
+    assertTrue(retrievePayment.getCurrency().equals(CURRENCY));
+    assertTrue(retrievePayment.getAmount().equals(AMOUNT));
+    assertTrue(retrievePayment.getReceiver().equals(receiver.getId()));
+
+    assertTrue(createPayment.getId().equals(retrievePayment.getId()));
+  }
+
 }
