@@ -14,10 +14,20 @@ Installation
 
 Add this dependency to your project's POM:
 
+    ...
+    <repository>
+      <id>Open Whisper Systems Maven</id>
+      <url>https://github.com/whispersystems/maven</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
+    ...
     <dependency>
       <groupId>com.stripe</groupId>
-      <artifactId>stripe-java</artifactId>
-      <version>1.12.0</version>
+      <artifactId>stripe-java-btc</artifactId>
+      <version>1.12.0-btc-beta</version>
     </dependency>
 
 ### Others
